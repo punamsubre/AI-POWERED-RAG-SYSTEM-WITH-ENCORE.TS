@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI RAG Demo | Encore.ts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --primary: #2dd4bf;
+            --secondary: #a855f7;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --error: #f43f5e;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 550px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 88vh;
+            /* Further reduced height */
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 0.25rem;
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            /* Smaller title */
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.15rem;
+        }
+
+        header p {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1rem 1.25rem 1.5rem 1.25rem;
+            /* Compact padding */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+        }
+
+        h2 {
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            /* Smaller subtitle */
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            padding: 0.6rem 0.9rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.6);
+            color: white;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.7rem 1.25rem;
+            border-radius: 0.75rem;
+            border: none;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .answer-box {
+            margin-top: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-left: 4px solid var(--primary);
+            display: none;
+            max-height: 18vh;
+            overflow-y: auto;
+            margin-bottom: 0.25rem;
+        }
+
+        .status {
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .file-upload-wrapper:hover {
+            border-color: var(--primary);
+        }
+
+        #file-input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Knowledge Buddy</h1>
+            <p>Upload documents and ask anything (RAG System)</p>
+        </header>
+
+        <section class="card">
+            <h2>Step 1: Upload Document</h2>
+            <div class="file-upload-wrapper">
+                <p id="file-name">Click or drop a PDF document here</p>
+                <input type="file" id="file-input" accept=".pdf">
+            </div>
+            <p id="upload-status" class="status"></p>
+        </section>
+
+        <section class="card">
+            <h2>Step 2: Ask a Question</h2>
+            <div class="input-group">
+                <input type="text" id="query-input" placeholder="e.g. What is the leave policy for employees?">
+            </div>
+            <button id="ask-btn">Analyze Context</button>
+            <div id="answer-container" class="answer-box">
+                <label>AI Answer:</label>
+                <p id="answer-text"></p>
+            </div>
+            <p id="ask-status" class="status"></p>
+        </section>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const fileName = document.getElementById('file-name');
+        const uploadStatus = document.getElementById('upload-status');
+        const queryInput = document.getElementById('query-input');
+        const askBtn = document.getElementById('ask-btn');
+        const answerContainer = document.getElementById('answer-container');
+        const answerText = document.getElementById('answer-text');
+        const askStatus = document.getElementById('ask-status');
+
+        const BASE_URL = 'http://localhost:4000';
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            fileName.innerText = `Selected: ${file.name}`;
+            uploadStatus.innerHTML = '<div class="loading"></div> Uploading and processing...';
+
+            try {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const base64Content = event.target.result.split(',')[1];
+                    const response = await fetch(`${BASE_URL}/upload`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            filename: file.name,
+                            content: base64Content
+                        })
+                    });
+
+                    if (response.ok) {
+                        uploadStatus.style.color = 'var(--success)';
+                        uploadStatus.innerText = '✅ Document uploaded and indexed successfully!';
+                    } else {
+                        throw new Error('Upload failed');
+                    }
+                };
+                reader.readAsDataURL(file);
+            } catch (err) {
+                uploadStatus.style.color = 'var(--error)';
+                uploadStatus.innerText = '❌ Error: ' + err.message;
+            }
+        });
+
+        askBtn.addEventListener('click', async () => {
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            askBtn.disabled = true;
+            answerContainer.style.display = 'none';
+            askStatus.innerHTML = '<div class="loading"></div> Searching knowledge base...';
+
+            try {
+                const response = await fetch(`${BASE_URL}/ask?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    answerText.innerText = data.answer;
+                    answerContainer.style.display = 'block';
+                    askStatus.innerText = '';
+                } else {
+                    throw new Error(data.message || 'Query failed');
+                }
+            } catch (err) {
+                askStatus.style.color = 'var(--error)';
+                askStatus.innerText = '❌ Error: ' + err.message;
+            } finally {
+                askBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,6 @@
+CREATE TABLE documents (
+    id TEXT PRIMARY KEY,
+    filename TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

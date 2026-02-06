@@ -1,0 +1,68 @@
+AI-POWERED RAG SYSTEM WITH ENCORE.TS
+==========================================================
+
+The Retrieval-Augmented Generation (RAG) system built using Encore.ts and Google Vertex AI.
+
+1. ARCHITECTURAL OVERVIEW
+-------------------------
+The system follows a modern, event-driven microservices architecture:
+
+- UPLOAD SERVICE: Receives PDF documents via Base64, extracts text locally using 
+  the pdf-parse library, and saves the raw content to a PostgreSQL database.
+
+- PUBSUB LAYER: Once a document is saved, the Upload Service publishes a 
+  "document-ready" event to an Encore Topic. This decouples the time-consuming 
+  embedding process from the fast upload process.
+
+- EMBEDDING WORKER: A background worker listens to the topic. It splits large 
+  documents into smaller "chunks" (approx. 1000 characters with 200 char overlap) 
+  to ensure semantic context is preserved.
+
+- AI SERVICE: Acts as the gateway to Google Vertex AI. It provides high-dimensional vectors (768 dimensions) using the 'text-embedding-004' model. It generates natural language answers using 'gemini-2.5-flash'.
+
+- QUERY SERVICE: The user-facing search engine. Step 1: Converts the user's question into a vector. Step 2: Performs a Cosine Similarity search in the PostgreSQL 'pgvector' enabled database to find the top 5 most relevant document chunks. Step 3: Sends the question + relevant context to Gemini to generate the final response.
+
+2. THE "ENCORE.TS" ADVANTAGES
+-----------------------------
+In this project, Encore.ts isn't just a framework it's the orchestrator that solves the hardest parts of backend development out-of-the-box. It eliminates the "infrastructure friction" typically found in cloud-native development:
+
+A. INFRASTRUCTURE AS CODE (IaC)
+   - ZERO CONFIGURATION: We didn't have to setup a PostgreSQL server, configure connection strings, or provision a Pub/Sub queue manually.
+   - CODE IS SOURCE OF TRUTH: By simply defining new SQLDatabase or new Topic, Encore provisions the necessary infrastructure automatically at runtime.
+
+B. TYPE-SAFE INTER-SERVICE COMMUNICATION
+   - CONTRACT-FIRST: When the Query service calls ai.createEmbedding, TypeScript ensures parameters and return types are perfectly matched across services.
+   - TRACEABILITY: In the Encore Dashboard, you can see the "Trace" of a single request as it jumps from upload -> pubsub -> worker -> ai.
+
+C. NATIVE DATABASE MIGRATIONS
+   - PGVECTOR INTEGRATION: We enabled advanced AI capabilities (CREATE EXTENSION vector) directly through Encore's standard SQL migration flow.
+
+3. SERVICE-BY-SERVICE BREAKDOWN
+-------------------------------
+- UPLOAD SERVICE
+   PDF EXTRACTION: Uses pdf-parse within an Encore API.
+   BASE64 PIPELINE: Demonstrates handling binary data via JSON APIs.
+   EVENT-DRIVEN: Signals the system via a Topic, keeping the UI responsive.
+
+- AI SERVICE (THE INTELLIGENCE LAYER)
+   SDK + REST HYBRID: Mixed SDK for generation and REST for embeddings.
+   MODEL CHOICE: gemini-2.5-flash for speed and text-embedding-004 for accuracy.
+
+- EMBEDDING SERVICE
+   CHUNKING STRATEGY: 1000-character chunks with 200-char overlap.
+   VECTOR STORAGE: Stores semantic meaning as numbers using pgvector. 
+
+- QUERY SERVICE (THE RAG CORE)
+   RETRIEVAL: Converts question to vector and performs Cosine Distance search.
+   AUGMENTATION: Grabs top 5 relevant chunks to "augment" the AI's knowledge.
+   ANSWER GENERATION: Gemini uses ONLY retrieved context to prevent hallucinations.
+
+4. WHY THIS MATTERS (THE ADVANTAGES)
+------------------------------------
+   COMPLEXITY COMPRESSION: Weeks of infrastructure work reduced to minutes.
+   SCALE-READY: Handles high volume via event-driven Pub/Sub.
+   LOCAL-TO-CLOUD PARITY: Works identically on your laptop and in the cloud.
+
+- Encore.ts is a modern backend framework that removes most of the manual infrastructure work typically required in traditional setups like Express. Instead of configuring Docker, PostgreSQL, pgvector, message queues, and environment variables yourself, you simply define resources such as SQLDatabase or Topic, and Encore automatically provisions the database, runs migrations, and sets up Pub/Sub. It also enables type-safe communication between services, allowing developers to call another service like a local function (for example, await ai.createEmbedding(...)) rather than using fragile HTTP URLs and duplicated TypeScript interfaces. In addition, Encore provides built-in observability through a local dashboard that visually traces every request, database query, and external AI call without requiring external logging or monitoring tools.
+
+- In this RAG solution, Encore acts as the architectural backbone that manages PostgreSQL vector storage, asynchronous background processing, request validation, and cloud deployment automatically. Independent folders such as /ai, /upload, and /query behave like microservices but communicate in a type-safe, monolithic-style manner, while Encore handles service discovery, networking, and security behind the scenes. It also detects SQL migration commands like CREATE EXTENSION vector and configures pgvector automatically, ensuring vector search works without manual setup. Overall, Encore enables a serverless-first, cloud-native architecture where developers focus on AI logic and business functionality instead of infrastructure, significantly reducing setup time, boilerplate code, and deployment complexity.

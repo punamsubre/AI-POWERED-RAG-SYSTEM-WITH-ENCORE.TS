@@ -5,7 +5,7 @@ import { DocumentsTopic } from "../upload/upload";
 // Subscribe to document upload events.
 const _ = new Subscription(DocumentsTopic, "process-embeddings", {
     handler: async (event) => {
-        // Split text into chunks (naive approach for demo)
+        // Split text into chunks
         // First try splitting by paragraphs
         let chunks = event.text.split(/\n\s*\n/).filter(c => c.trim().length > 0);
 

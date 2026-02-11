@@ -1,13 +1,15 @@
 import { api } from "encore.dev/api";
-import * as dotenv from "dotenv";
+import { secret } from "encore.dev/config";
 import { VertexAI } from "@google-cloud/vertexai";
 
-// Load environment variables from .env file
-dotenv.config();
+// Infrastructure configuration via Encore Secrets
+const UseVertexAI = secret("GOOGLE_GENAI_USE_VERTEXAI");
+const ProjectID = secret("GOOGLE_CLOUD_PROJECT");
+const LocationID = secret("GOOGLE_CLOUD_LOCATION");
 
-const useVertexAI = process.env.GOOGLE_GENAI_USE_VERTEXAI === "True";
-const project = process.env.GOOGLE_CLOUD_PROJECT;
-const location = process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
+const useVertexAI = UseVertexAI() === "True";
+const project = ProjectID();
+const location = LocationID() || "us-central1";
 
 export interface EmbeddingResponse {
     vector: number[];

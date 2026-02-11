@@ -1,41 +1,54 @@
-# AI-Powered RAG System with Encore.ts & Vertex AI
+# AI-Powered RAG System with Encore.ts, Temporal & Vertex AI
 
-This project is a Production-Ready Retrieval-Augmented Generation (RAG) system built with Encore.ts and Google Cloud Vertex AI. It supports PDF text extraction, high-dimensional vector search using `pgvector`, and context-aware question answering with Gemini.
+A Production-Ready Retrieval-Augmented Generation (RAG) system combining **Temporal** workflow orchestration with **Encore.ts** infrastructure management and **Google Cloud Vertex AI**.
 
-## Features
+## Architecture
 
-- **Document Ingestion:** Extract text from PDFs using `pdf-parse`.
-- **Vector Search:** Semantic retrieval powered by PostgreSQL `pgvector` and `text-embedding-004`.
-- **Intelligent QA:** Generation synthesized by the latest Gemini model (2.5 Flash).
-- **Service-Oriented:** Clean architectural separation between Upload, Embedding, Query, and AI services.
+| Layer | Technology | Purpose |
+|:---|:---|:---|
+| Workflow Orchestration | **Temporal** | Retry logic, error recovery, pipeline visibility |
+| Infrastructure | **Encore.ts** | PostgreSQL, pgvector, API hosting, service mesh |
+| AI | **Vertex AI** | Embeddings (text-embedding-004) + Generation (Gemini 2.5 Flash) |
+| Storage | **Google Cloud Storage** | Source PDF documents |
+
+## Services
+
+- **`temporal/`** — Temporal workflow, activities, worker, and trigger API
+- **`upload/`** — PDF text extraction and document storage
+- **`embedding/`** — Vector embedding generation and storage (pgvector)
+- **`query/`** — Semantic search and AI-powered Q&A
+- **`ai/`** — Centralized Vertex AI gateway
 
 ## Prerequisites
 
-1.  **Google Cloud Project:** With Vertex AI API enabled.
-2.  **Authentication:** Set up Application Default Credentials (`gcloud auth application-default login`).
-3.  **Environment Variables:** Create a `.env` file with:
-    - `GOOGLE_CLOUD_PROJECT=your-project-id`
-    - `GOOGLE_CLOUD_LOCATION=us-central1`
-    - `GOOGLE_GENAI_USE_VERTEXAI=True`
+- [Encore CLI](https://encore.dev/docs/install)
+- [Temporal CLI](https://docs.temporal.io/cli)
+- Docker Desktop (for local PostgreSQL)
+- GCP credentials with Vertex AI access
+- Node.js 18+
 
-## Running Locally
+## Quick Start
 
 ```bash
-# Start the Encore runtime (automatically handles DB and migrations)
+# Terminal 1: Start Temporal Server
+temporal server start-dev --db-filename temporal.db
+
+# Terminal 2: Start Encore
 encore run
+
+# Terminal 3: Start Temporal Worker
+npx ts-node temporal/worker.ts
+
+# Terminal 4: Trigger ingestion
+curl -X POST http://localhost:4000/trigger \
+  -H "Content-Type: application/json" \
+  -d '{"bucket":"your-bucket","blob":"document.pdf"}'
+
+# Ask a question
+curl http://localhost:4000/ask?q=What+is+in+the+document
 ```
 
-## How to Use
+## Monitoring
 
-### 🖥️ Option 1: Demo UI (Recommended)
-Open the provided `demo.html` file directly in your browser. This custom interface handles the PDF Base64 conversion and displays answers beautifully.
-
-### 🛠️ Option 2: API Request
-#### 1. Upload a PDF
-Send a POST request to `/upload` with the filename and base64 content.
-
-### 2. Ask a Question
-Send a GET request to `/ask?q=your-question`. The system will retrieve relevant chunks from your documents and provide a context-aware answer.
-
----
-Built with 💎 **Encore.ts**
+- **Encore Dashboard**: http://localhost:9400
+- **Temporal Web UI**: http://localhost:8233

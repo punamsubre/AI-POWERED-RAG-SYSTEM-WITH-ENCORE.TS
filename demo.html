@@ -4,33 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI RAG Demo | Encore.ts</title>
+    <title>AI RAG System | Encore.ts + Temporal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #0f172a;
             --card-bg: rgba(30, 41, 59, 0.7);
             --primary: #2dd4bf;
             --secondary: #a855f7;
+            --temporal: #f97316;
             --text: #f8fafc;
             --text-dim: #94a3b8;
             --error: #f43f5e;
             --success: #10b981;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html,
-        body {
-            height: 100%;
-            overflow: hidden;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: 'Outfit', sans-serif;
@@ -40,196 +31,209 @@
                 radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
                 radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
             color: var(--text);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 1rem;
+            padding: 1.5rem 1rem;
         }
 
         .container {
-            max-width: 550px;
+            max-width: 650px;
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
-            max-height: 88vh;
-            /* Further reduced height */
+            gap: 1rem;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 0.25rem;
-        }
-
+        header { text-align: center; margin-bottom: 0.5rem; }
         header h1 {
-            font-size: 1.75rem;
-            /* Smaller title */
-            background: linear-gradient(to right, var(--primary), var(--secondary));
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--temporal), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 0.15rem;
         }
+        header p { color: var(--text-dim); font-size: 0.85rem; margin-top: 0.25rem; }
 
-        header p {
-            color: var(--text-dim);
-            font-size: 0.8rem;
+        .badge-row {
+            display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.5rem;
         }
+        .badge {
+            font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 1rem;
+            font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .badge-encore { background: rgba(45,212,191,0.15); color: var(--primary); border: 1px solid rgba(45,212,191,0.3); }
+        .badge-temporal { background: rgba(249,115,22,0.15); color: var(--temporal); border: 1px solid rgba(249,115,22,0.3); }
+        .badge-ai { background: rgba(168,85,247,0.15); color: var(--secondary); border: 1px solid rgba(168,85,247,0.3); }
 
         .card {
             background: var(--card-bg);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 1rem;
-            padding: 1rem 1.25rem 1.5rem 1.25rem;
-            /* Compact padding */
+            padding: 1.25rem;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, border-color 0.3s;
         }
+        .card:hover { transform: translateY(-2px); }
+        .card-temporal { border-left: 3px solid var(--temporal); }
+        .card-encore { border-left: 3px solid var(--primary); }
+        .card-ai { border-left: 3px solid var(--secondary); }
 
-        .card:hover {
-            transform: translateY(-3px);
-        }
+        h2 { margin-bottom: 0.75rem; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        h2 .icon { font-size: 1.2rem; }
 
-        h2 {
-            margin-bottom: 0.75rem;
-            font-size: 1rem;
-            /* Smaller subtitle */
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .input-row {
+            display: flex; gap: 0.5rem; margin-bottom: 0.75rem;
         }
+        .input-row input {
+            flex: 1; padding: 0.6rem 0.9rem; border-radius: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.6);
+            color: white; font-family: inherit; font-size: 0.9rem;
+        }
+        .input-row input:focus { outline: none; border-color: var(--primary); }
 
-        .input-group {
-            margin-bottom: 1rem;
+        input[type="text"] {
+            width: 100%; padding: 0.6rem 0.9rem; border-radius: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.6);
+            color: white; font-family: inherit; font-size: 0.9rem;
         }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-dim);
-        }
-
-        input[type="text"],
-        input[type="file"] {
-            width: 100%;
-            padding: 0.6rem 0.9rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(15, 23, 42, 0.6);
-            color: white;
-            font-family: inherit;
-            font-size: 0.95rem;
-        }
+        input[type="text"]:focus { outline: none; border-color: var(--secondary); }
 
         button {
-            width: 100%;
-            padding: 0.7rem 1.25rem;
-            border-radius: 0.75rem;
-            border: none;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s, transform 0.1s;
+            padding: 0.65rem 1.25rem; border-radius: 0.75rem; border: none;
+            color: white; font-weight: 600; cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s; font-family: inherit; font-size: 0.9rem;
         }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        button:hover {
-            opacity: 0.9;
-        }
+        .btn-temporal { background: linear-gradient(to right, var(--temporal), #e11d48); width: 100%; }
+        .btn-ask { background: linear-gradient(to right, var(--primary), var(--secondary)); width: 100%; margin-top: 0.5rem; }
 
-        button:active {
-            transform: scale(0.98);
-        }
+        .status { font-size: 0.85rem; margin-top: 0.75rem; text-align: center; min-height: 1.5rem; }
 
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .workflow-timeline {
+            margin-top: 0.75rem; display: none;
+            background: rgba(0,0,0,0.2); border-radius: 0.75rem; padding: 0.75rem 1rem;
         }
+        .timeline-step {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.4rem 0; font-size: 0.82rem; color: var(--text-dim);
+        }
+        .timeline-step .dot {
+            width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2);
+            flex-shrink: 0;
+        }
+        .timeline-step.active .dot { background: var(--temporal); box-shadow: 0 0 8px var(--temporal); }
+        .timeline-step.done .dot { background: var(--success); }
+        .timeline-step.done { color: var(--success); }
+        .timeline-step.active { color: var(--temporal); font-weight: 600; }
 
         .answer-box {
-            margin-top: 0.75rem;
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            background: rgba(0, 0, 0, 0.2);
-            border-left: 4px solid var(--primary);
-            display: none;
-            max-height: 18vh;
-            overflow-y: auto;
-            margin-bottom: 0.25rem;
-        }
-
-        .status {
-            font-size: 0.85rem;
-            margin-top: 1rem;
-            text-align: center;
+            margin-top: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.75rem;
+            background: rgba(0,0,0,0.2); border-left: 4px solid var(--secondary);
+            display: none; max-height: 25vh; overflow-y: auto;
+            line-height: 1.5; font-size: 0.92rem;
         }
 
         .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, .3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
+            display: inline-block; width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,.3); border-radius: 50%;
+            border-top-color: #fff; animation: spin 1s ease-in-out infinite;
+            margin-right: 6px; vertical-align: middle;
         }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .file-upload-wrapper {
-            position: relative;
-            border: 2px dashed rgba(255, 255, 255, 0.1);
-            padding: 2rem;
-            border-radius: 1rem;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.3s;
+            position: relative; border: 2px dashed rgba(255,255,255,0.1);
+            padding: 1.5rem; border-radius: 1rem; text-align: center;
+            cursor: pointer; transition: border-color 0.3s; margin-bottom: 0.75rem;
+        }
+        .file-upload-wrapper:hover { border-color: var(--primary); }
+        #file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+        .divider {
+            text-align: center; color: var(--text-dim); font-size: 0.75rem;
+            margin: 0.25rem 0; opacity: 0.6;
         }
 
-        .file-upload-wrapper:hover {
-            border-color: var(--primary);
+        .tabs {
+            display: flex; gap: 0; margin-bottom: 0.75rem;
+            background: rgba(0,0,0,0.2); border-radius: 0.5rem; overflow: hidden;
         }
-
-        #file-input {
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            cursor: pointer;
+        .tab {
+            flex: 1; text-align: center; padding: 0.5rem; font-size: 0.8rem;
+            cursor: pointer; color: var(--text-dim); transition: all 0.2s;
+            border: none; background: transparent; font-family: inherit;
         }
+        .tab.active { background: rgba(249,115,22,0.2); color: var(--temporal); font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 
 <body>
     <div class="container">
         <header>
-            <h1>Knowledge Buddy</h1>
-            <p>Upload documents and ask anything (RAG System)</p>
+            <h1>🧠 Knowledge Buddy</h1>
+            <p>Enterprise RAG System with Workflow Orchestration</p>
+            <div class="badge-row">
+                <span class="badge badge-encore">⚡ Encore.ts</span>
+                <span class="badge badge-temporal">⏱️ Temporal</span>
+                <span class="badge badge-ai">✨ Vertex AI</span>
+            </div>
         </header>
 
-        <section class="card">
-            <h2>Step 1: Upload Document</h2>
-            <div class="file-upload-wrapper">
-                <p id="file-name">Click or drop a PDF document here</p>
-                <input type="file" id="file-input" accept=".pdf">
+        <!-- SECTION 1: Upload / Trigger -->
+        <section class="card card-temporal">
+            <h2><span class="icon">📄</span> Step 1: Ingest Document</h2>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('gcs')">☁️ GCS Bucket (Temporal)</button>
+                <button class="tab" onclick="switchTab('local')">💻 Local Upload</button>
             </div>
+
+            <!-- Tab 1: GCS Trigger -->
+            <div id="tab-gcs" class="tab-content active">
+                <div class="input-row">
+                    <input type="text" id="bucket-input" placeholder="GCS Bucket Name" value="agent_engine_depoly">
+                    <input type="text" id="blob-input" placeholder="File name (e.g. report.pdf)">
+                </div>
+                <button class="btn-temporal" id="trigger-btn" onclick="triggerWorkflow()">
+                    🚀 Start Temporal Workflow
+                </button>
+
+                <div id="workflow-timeline" class="workflow-timeline">
+                    <div class="timeline-step" id="step-gcs"><span class="dot"></span> Download from GCS</div>
+                    <div class="timeline-step" id="step-parse"><span class="dot"></span> Parse PDF</div>
+                    <div class="timeline-step" id="step-store"><span class="dot"></span> Store Document</div>
+                    <div class="timeline-step" id="step-embed"><span class="dot"></span> Generate Embeddings</div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Local Upload -->
+            <div id="tab-local" class="tab-content">
+                <div class="file-upload-wrapper">
+                    <p id="file-name">Click or drop a PDF document here</p>
+                    <input type="file" id="file-input" accept=".pdf,.txt">
+                </div>
+                <button class="btn-temporal" style="background: linear-gradient(to right, var(--primary), var(--secondary));" id="upload-btn" disabled>
+                    📤 Upload Directly
+                </button>
+            </div>
+
             <p id="upload-status" class="status"></p>
         </section>
 
-        <section class="card">
-            <h2>Step 2: Ask a Question</h2>
-            <div class="input-group">
-                <input type="text" id="query-input" placeholder="e.g. What is the leave policy for employees?">
-            </div>
-            <button id="ask-btn">Analyze Context</button>
+        <!-- SECTION 2: Ask Questions -->
+        <section class="card card-ai">
+            <h2><span class="icon">💬</span> Step 2: Ask a Question</h2>
+            <input type="text" id="query-input" placeholder="e.g. What are the data protection laws in India?">
+            <button class="btn-ask" id="ask-btn">✨ Analyze Context</button>
             <div id="answer-container" class="answer-box">
-                <label>AI Answer:</label>
                 <p id="answer-text"></p>
             </div>
             <p id="ask-status" class="status"></p>
@@ -237,23 +241,108 @@
     </div>
 
     <script>
-        const fileInput = document.getElementById('file-input');
-        const fileName = document.getElementById('file-name');
-        const uploadStatus = document.getElementById('upload-status');
-        const queryInput = document.getElementById('query-input');
-        const askBtn = document.getElementById('ask-btn');
-        const answerContainer = document.getElementById('answer-container');
-        const answerText = document.getElementById('answer-text');
-        const askStatus = document.getElementById('ask-status');
-
         const BASE_URL = 'http://localhost:4000';
 
-        fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            if (tab === 'gcs') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('tab-gcs').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('tab-local').classList.add('active');
+            }
+        }
 
-            fileName.innerText = `Selected: ${file.name}`;
-            uploadStatus.innerHTML = '<div class="loading"></div> Uploading and processing...';
+        // GCS Trigger Workflow
+        async function triggerWorkflow() {
+            const bucket = document.getElementById('bucket-input').value.trim();
+            const blob = document.getElementById('blob-input').value.trim();
+            const status = document.getElementById('upload-status');
+            const timeline = document.getElementById('workflow-timeline');
+            const triggerBtn = document.getElementById('trigger-btn');
+
+            if (!bucket || !blob) {
+                status.style.color = 'var(--error)';
+                status.innerText = '❌ Please enter both bucket name and file name.';
+                return;
+            }
+
+            triggerBtn.disabled = true;
+            status.innerHTML = '<div class="loading"></div> Starting Temporal workflow...';
+            status.style.color = 'var(--temporal)';
+            timeline.style.display = 'block';
+
+            // Animate timeline
+            const steps = ['step-gcs', 'step-parse', 'step-store', 'step-embed'];
+            steps.forEach(s => {
+                document.getElementById(s).className = 'timeline-step';
+            });
+
+            try {
+                const response = await fetch(`${BASE_URL}/trigger`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bucket, blob })
+                });
+
+                if (!response.ok) throw new Error('Trigger failed: ' + response.status);
+
+                const data = await response.json();
+                status.innerHTML = `<div class="loading"></div> Workflow started: <strong>${data.workflowId}</strong>`;
+
+                // Simulate timeline progress (real polling would use /workflow-status)
+                for (let i = 0; i < steps.length; i++) {
+                    document.getElementById(steps[i]).className = 'timeline-step active';
+                    await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
+                    document.getElementById(steps[i]).className = 'timeline-step done';
+                }
+
+                // Check final status
+                try {
+                    const statusResp = await fetch(`${BASE_URL}/workflow-status?workflowId=${data.workflowId}`);
+                    const statusData = await statusResp.json();
+                    if (statusData.status === 'COMPLETED') {
+                        status.style.color = 'var(--success)';
+                        status.innerText = `✅ Workflow completed! ${statusData.result?.chunksProcessed || ''} chunks embedded.`;
+                    } else {
+                        status.style.color = 'var(--temporal)';
+                        status.innerText = `⏱️ Workflow status: ${statusData.status}. Check Temporal UI.`;
+                    }
+                } catch {
+                    status.style.color = 'var(--success)';
+                    status.innerText = '✅ Workflow triggered! Check Temporal UI at localhost:8233';
+                }
+            } catch (err) {
+                status.style.color = 'var(--error)';
+                status.innerText = '❌ Error: ' + err.message;
+            } finally {
+                triggerBtn.disabled = false;
+            }
+        }
+
+        // Local File Upload (Direct to Encore)
+        const fileInput = document.getElementById('file-input');
+        const fileNameEl = document.getElementById('file-name');
+        const uploadBtn = document.getElementById('upload-btn');
+        let selectedFile = null;
+
+        fileInput.addEventListener('change', (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                fileNameEl.innerText = `Selected: ${selectedFile.name}`;
+                uploadBtn.disabled = false;
+            }
+        });
+
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            const status = document.getElementById('upload-status');
+            uploadBtn.disabled = true;
+            status.innerHTML = '<div class="loading"></div> Uploading and processing...';
+            status.style.color = 'var(--primary)';
 
             try {
                 const reader = new FileReader();
@@ -262,51 +351,56 @@
                     const response = await fetch(`${BASE_URL}/upload`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            filename: file.name,
-                            content: base64Content
-                        })
+                        body: JSON.stringify({ filename: selectedFile.name, content: base64Content })
                     });
-
                     if (response.ok) {
-                        uploadStatus.style.color = 'var(--success)';
-                        uploadStatus.innerText = '✅ Document uploaded and indexed successfully!';
-                    } else {
-                        throw new Error('Upload failed');
-                    }
+                        status.style.color = 'var(--success)';
+                        status.innerText = '✅ Document uploaded successfully!';
+                    } else throw new Error('Upload failed');
                 };
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(selectedFile);
             } catch (err) {
-                uploadStatus.style.color = 'var(--error)';
-                uploadStatus.innerText = '❌ Error: ' + err.message;
+                status.style.color = 'var(--error)';
+                status.innerText = '❌ Error: ' + err.message;
+            } finally {
+                uploadBtn.disabled = false;
             }
         });
 
-        askBtn.addEventListener('click', async () => {
-            const query = queryInput.value.trim();
+        // Ask Question
+        document.getElementById('ask-btn').addEventListener('click', async () => {
+            const query = document.getElementById('query-input').value.trim();
             if (!query) return;
+
+            const askBtn = document.getElementById('ask-btn');
+            const answerContainer = document.getElementById('answer-container');
+            const answerText = document.getElementById('answer-text');
+            const askStatus = document.getElementById('ask-status');
 
             askBtn.disabled = true;
             answerContainer.style.display = 'none';
             askStatus.innerHTML = '<div class="loading"></div> Searching knowledge base...';
+            askStatus.style.color = 'var(--secondary)';
 
             try {
                 const response = await fetch(`${BASE_URL}/ask?q=${encodeURIComponent(query)}`);
                 const data = await response.json();
-
                 if (response.ok) {
                     answerText.innerText = data.answer;
                     answerContainer.style.display = 'block';
                     askStatus.innerText = '';
-                } else {
-                    throw new Error(data.message || 'Query failed');
-                }
+                } else throw new Error(data.message || 'Query failed');
             } catch (err) {
                 askStatus.style.color = 'var(--error)';
                 askStatus.innerText = '❌ Error: ' + err.message;
             } finally {
                 askBtn.disabled = false;
             }
+        });
+
+        // Enter key triggers ask
+        document.getElementById('query-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('ask-btn').click();
         });
     </script>
 </body>
